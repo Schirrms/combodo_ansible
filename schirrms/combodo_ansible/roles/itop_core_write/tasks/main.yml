@@ -24,9 +24,9 @@
 #  - itop_obj_class = Class of CI to be written
 #  - itop_key = Set of attributes to be used for the reconciliation
 #  - itop_fields = Set of attributes to be used for update or creation
-#  - optional : itop_output_fields = List of attributes to get from iTop in 'itop_output_values' dict 
+#  - optional : itop_output_fields = List of attributes to get from iTop in 'itop_output_values' dict
 #               once creation or update is done.
-#               if itop_output_fields is not set, 'itop_output_values' dict is loaded with the 'itop_fields' set 
+#               if itop_output_fields is not set, 'itop_output_values' dict is loaded with the 'itop_fields' set
 # Please, refer to iTop's wiki about REST/JSON services for more details on these parameters.
 #
 # Output parameters:
@@ -218,7 +218,7 @@
       ansible.builtin.set_fact:
         itop_out_fields: "{{ itop_output_fields }}"
         itop_output_fields: ''
-      when: 
+      when:
         - itop_output_fields is defined
         - itop_output_fields|length > 0
 
