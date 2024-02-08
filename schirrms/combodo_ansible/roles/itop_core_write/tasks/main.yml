@@ -1,0 +1,259 @@
+#
+# just a conversion of Combodo's itop.core.write.yml into an Ansible rôle
+# Schirrms 2024-02-07
+#
+# Choices :
+# 1. move the 'vars' section in the playbook into 'defaults', hence allowing to override
+#    them if needed
+# 2. many ' # noqa: jinja[invalid]' to please my somewhat outdated ansible-linter
+# 3. all vars used in this role are now prefixed by 'itop_'
+#
+# @copyright   Copyright (C) 2023 Combodo SARL
+# @license     http://opensource.org/licenses/AGPL-3.0
+#
+# This playbook writes a CI in iTop i.e. checks if a CI exists, creates it if not and updates it otherwise.
+#
+# Input parameters:
+#  Some are, by default, defined in the ./host_vars/localhost.yml file.
+#  - itop_root = Root URL of the iTop application
+#  - itop_ws_version = Web Service version
+#  - itop_ws_auth_user = User login
+#  - itop_ws_auth_pwd = User password
+#  - itop_ws_ansible_uuid = UUID of the Ansible application in iTop
+#  Other parameters dedicated to iTop's REST/JSON API need to be given to that playbook:
+#  - itop_obj_class = Class of CI to be written
+#  - itop_key = Set of attributes to be used for the reconciliation
+#  - itop_fields = Set of attributes to be used for update or creation
+#  - optional : itop_output_fields = List of attributes to get from iTop in 'itop_output_values' dict 
+#               once creation or update is done.
+#               if itop_output_fields is not set, 'itop_output_values' dict is loaded with the 'itop_fields' set 
+# Please, refer to iTop's wiki about REST/JSON services for more details on these parameters.
+#
+# Output parameters:
+#  - itop_code = Error code sent by iTop's API
+#  - itop_obj_key = Key of the created or updated CI
+#  - itop_output_values = values of the fields after creation/update
+#
+---
+
+# If you prefer to encrypt the login account and password in an Ansible vault:
+#  - Uncomment the following 2 lines
+#  - Store the parameter in a local itopvault.yml file
+#  vars_files:
+#    itopvault.yml
+
+# no more test of "{{ itop_output_fields }}" as it is no more mandatory
+- name: Check key variables are defined and not empty
+  ansible.builtin.fail:
+    msg: "One variable is empty"
+  with_items:
+    - "{{ itop_obj_class }}"
+    - "{{ itop_key }}"
+    - "{{ itop_fields }}"
+  when:
+    - not item
+    - item is none
+
+- name: Build control list
+  ansible.builtin.set_fact:
+    itop_fields_list: "{{ itop_fields.keys() | join(', ') }}"
+
+- name: Check if CI exists
+  block:
+    - name: Call operation core/get
+      ansible.builtin.uri:
+        url: "{{ url }}"
+        method: POST
+        force_basic_auth: true
+        url_username: "{{ itop_ws_auth_user }}"
+        url_password: "{{ itop_ws_auth_pwd }}"
+        body: json_data= {
+          "operation":"core/get",
+          "class":"{{ itop_obj_class }}",
+          "key":{{ itop_key | to_json }},
+          "output_fields":"{{ itop_fields_list }}"
+          }
+        return_content: true
+      register: response
+
+    - name: Save the Json data
+      ansible.builtin.set_fact:
+        jsondata: "{{ response.content | from_json }}"
+
+    - name: Get error code and message # noqa: jinja[invalid]
+      ansible.builtin.set_fact:
+        itop_code: "{{ jsondata | json_query('code') }}"
+        message: "{{ jsondata | json_query('message') }}"
+
+    - name: Display error, if any
+      ansible.builtin.fail:
+        msg: "{{ message }}"
+      when: itop_code != "0"
+
+    - name: Get itop_obj_key # noqa: jinja[invalid]
+      ansible.builtin.set_fact:
+        itop_obj_key: "{{ jsondata | json_query(param) }}"
+      vars:
+        param: 'objects.*.key'
+
+    - name: Get fields # noqa: jinja[invalid]
+      ansible.builtin.set_fact:
+        get_fields: "{{ jsondata | json_query(param) }}"
+      vars:
+        param: 'objects.*.fields'
+
+- name: Create CI
+  when: itop_obj_key == "0" or itop_obj_key == ""
+  block:
+    - name: Call operation core/create
+      ansible.builtin.uri:
+        url: "{{ url }}"
+        method: POST
+        force_basic_auth: true
+        url_username: "{{ itop_ws_auth_user }}"
+        url_password: "{{ itop_ws_auth_pwd }}"
+        body: json_data= {
+          "operation":"core/create",
+          "comment":"{{ comment_for_create }}",
+          "class":"{{ itop_obj_class }}",
+          "fields":{{ itop_fields | to_json }},
+          "output_fields":"{{ itop_fields_list }}"
+          }
+        return_content: true
+      register: response
+
+    - name: Save the Json data
+      ansible.builtin.set_fact:
+        jsondata: "{{ response.content | from_json }}"
+
+    - name: Get error code and message # noqa: jinja[invalid]
+      ansible.builtin.set_fact:
+        itop_code: "{{ jsondata | json_query('code') }}"
+        message: "{{ jsondata | json_query('message') }}"
+
+    - name: Display error, if any
+      ansible.builtin.fail:
+        msg: "{{ message }}"
+      when: itop_code != "0"
+
+    - name: Register operation
+      ansible.builtin.set_fact:
+        operation: "{{ 'been created' }}"
+      changed_when: itop_code == "0"
+
+- name: Update CI
+  when: itop_obj_key != "0" and itop_obj_key != ""
+  block:
+    - name: Call operation core/update
+      ansible.builtin.uri:
+        url: "{{ url }}"
+        method: POST
+        force_basic_auth: true
+        url_username: "{{ itop_ws_auth_user }}"
+        url_password: "{{ itop_ws_auth_pwd }}"
+        body: json_data= {
+          "operation":"core/update",
+          "comment":"{{ comment_for_update }}",
+          "class":"{{ itop_obj_class }}",
+          "key":{{ itop_key | to_json }},
+          "fields":{{ itop_fields | to_json }},
+          "output_fields":"{{ itop_fields_list }}"
+          }
+        return_content: true
+      register: response
+
+    - name: Save the Json data
+      ansible.builtin.set_fact:
+        jsondata: "{{ response.content | from_json }}"
+
+    - name: Get error code and message # noqa: jinja[invalid]
+      ansible.builtin.set_fact:
+        itop_code: "{{ jsondata | json_query('code') }}"
+        message: "{{ jsondata | json_query('message') }}"
+
+    - name: Display error, if any
+      ansible.builtin.fail:
+        msg: "{{ message }}"
+      when: itop_code != "0"
+
+    - name: Get fields # noqa: jinja[invalid]
+      ansible.builtin.set_fact:
+        set_fields: "{{ jsondata | json_query(param) }}"
+      vars:
+        param: 'objects.*.fields'
+
+    - name: Register operation
+      ansible.builtin.set_fact:
+        operation: "{{ 'been updated' }}"
+      changed_when: get_fields != set_fields
+      when: get_fields != set_fields
+
+    - name: Register no change
+      ansible.builtin.set_fact:
+        operation: "{{ 'not been modified' }}"
+      when: get_fields == set_fields
+
+- name: Operation is successful at this stage
+  block:
+    - name: Get itop_obj_key # noqa: jinja[invalid]
+      ansible.builtin.set_fact:
+        itop_obj_key: "{{ jsondata | json_query(param) }}"
+      vars:
+        param: 'objects.*.key'
+
+    - name: Display itop_obj_key
+      ansible.builtin.debug:
+        msg: "Object of class {{ itop_obj_class }} with key {{ itop_obj_key }} has {{ operation }}"
+
+    - name: Set returned variables
+      ansible.builtin.set_fact:
+        itop_code: = "0"
+        itop_obj_key: "{{ itop_obj_key }}"
+
+    - name: Set default value to return
+      ansible.builtin.set_fact:
+        itop_out_fields: "{{ itop_fields_list }}"
+
+    - name: Select values to return
+      ansible.builtin.set_fact:
+        itop_out_fields: "{{ itop_output_fields }}"
+        itop_output_fields: ''
+      when: 
+        - itop_output_fields is defined
+        - itop_output_fields|length > 0
+
+    - name: Get actual values
+      ansible.builtin.uri:
+        url: "{{ url }}"
+        method: POST
+        force_basic_auth: true
+        url_username: "{{ itop_ws_auth_user }}"
+        url_password: "{{ itop_ws_auth_pwd }}"
+        body: json_data= {
+          "operation":"core/get",
+          "class":"{{ itop_obj_class }}",
+          "key":{{ itop_key | to_json }},
+          "output_fields":"{{ itop_out_fields }}"
+          }
+        return_content: true
+      register: response
+
+    - name: Save the Json data
+      ansible.builtin.set_fact:
+        jsondata: "{{ response.content | from_json }}"
+
+    - name: Get error code and message # noqa: jinja[invalid]
+      ansible.builtin.set_fact:
+        itop_code: "{{ jsondata | json_query('code') }}"
+        message: "{{ jsondata | json_query('message') }}"
+
+    - name: Display error, if any
+      ansible.builtin.fail:
+        msg: "{{ message }}"
+      when: itop_code != "0"
+
+    - name: Get fields # noqa: jinja[invalid]
+      ansible.builtin.set_fact:
+        itop_output_values: "{{ jsondata | json_query(param) }}"
+      vars:
+        param: 'objects.*.fields'

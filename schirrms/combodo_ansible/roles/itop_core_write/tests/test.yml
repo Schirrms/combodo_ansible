@@ -1,0 +1,6 @@
+---
+- name: Test
+  hosts: localhost
+  remote_user: root
+  roles:
+    - combodo.ansible_itop.itop_core_write
