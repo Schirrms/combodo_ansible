@@ -39,7 +39,7 @@ tags: ['infrastructure', 'tools']
 dependencies: {}
 
 # The URL of the originating SCM repository
-repository: https://github.com/Schirrms/combodo-ansible
+repository: https://github.com/Schirrms/combodo_ansible
 
 # The URL to any online docs
 documentation: http://docs.example.com
