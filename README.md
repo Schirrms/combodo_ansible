@@ -37,11 +37,11 @@ This iTop module development is sponsored, led and supported by [Combodo](https:
 
 ## End of quote
 
-The playbooks work fine, but are a little bit hard to integrate in an existing ansible functionality. They are more built as a standalone funct.
+The playbooks work fine, but are a little bit hard to integrate in an existing ansible functionality. They are more built as a standalone function.
 
 As I need to integrate those functionalities in other workflow, I cic a crude conversion of the playbook into a role.
 
-Basically, I cut and pasted the playbook. I also prefixed all var inout and output by 'itop_' as there is no 'scope' for vars in Ansible.
+Basically, I cut and pasted the playbook. I also prefixed all var input and output by 'itop_' as there is no 'scope' for vars in Ansible.
 
 ## Current state
 
@@ -80,7 +80,7 @@ Once te requirement in place, you can  use it in your playbook like this:
   gather_facts: false
 
   tasks:
-    - name: Set variables for the CI to Upcate
+    - name: Set variables for the CI to Update
       ansible.builtin.set_fact:
         itop_obj_class: "Name of the iTop Class"
         itop_key:
