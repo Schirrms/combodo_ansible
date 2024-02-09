@@ -1,6 +1,9 @@
 # combodo-ansible
 
-This is just a role conversion of Combodo's iTop Ansible playbooks
+This is just a role conversion of Combodo's iTop Ansible playbooks.
+
+If this is your first encounter with Ansible fot iTop, I created also some (1, at this time 😉) test sets in this other repo:
+[Combodo_Ansible_Demo](https://github.com/Schirrms/Combodo_Ansible_Demo)
 
 ## Goal, origins
 
