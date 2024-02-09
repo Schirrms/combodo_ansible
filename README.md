@@ -2,12 +2,12 @@
 
 This is just a role conversion of Combodo's iTop Ansible playbooks.
 
-If this is your first encounter with Ansible fot iTop, I created also some (1, at this time 😉) test sets in this other repo:
+If this is your first encounter with Ansible for iTop, I created also some (1, at this time 😉) test sets in this other repo:
 [Combodo_Ansible_Demo](https://github.com/Schirrms/Combodo_Ansible_Demo)
 
 ## Goal, origins
 
-[Combodo](https://www.combodo.com/), the company who created an maintains our favorite ITSM software [iTop](https://www.combodo.com/itop) created in 2023 at set of Ansible Playbooks to interact with iTop from Ansible.
+[Combodo](https://www.combodo.com/), the company who created an maintains our favorite ITSM software [iTop](https://www.combodo.com/itop) created in 2023 a set of Ansible Playbooks to interact with iTop from Ansible.
 
 ## Quote from the source package
 
@@ -37,15 +37,15 @@ This iTop module development is sponsored, led and supported by [Combodo](https:
 
 ## End of quote
 
-The playbooks work fine, but are a little bit hard to integrate in an existing ansible functionality. They are more built as a standalone function.
+The playbooks work fine, but are a little bit hard to integrate in an existing ansible workload. They are more built as a standalone function.
 
-As I need to integrate those functionalities in other workflow, I cic a crude conversion of the playbook into a role.
+As I need to integrate those functionalities in other workflows, I did a crude conversion of the playbook into a role.
 
-Basically, I cut and pasted the playbook. I also prefixed all var input and output by 'itop_' as there is no 'scope' for vars in Ansible.
+Basically, I cut and pasted the playbook. I also prefixed all input and output variables by 'itop_' as there is no 'scope' for vars in Ansible.
 
 ## Current state
 
-At for now, only the playbook itop.core.write has been ported.
+At for now, only the playbook `itop.core.write.yml` has been ported.
 
 ## Usage
 
@@ -72,7 +72,7 @@ then, the collection is installed/updated by:
 ansible-galaxy collection install -r requirements.yml
 ~~~
 
-Once te requirement in place, you can  use it in your playbook like this:
+Once the requirement in place, you can  use it in your playbook like this:
 
 ~~~yaml
 - name: Create a Virtual Machine in iTop
@@ -91,9 +91,7 @@ Once te requirement in place, you can  use it in your playbook like this:
           ".....":
             ".....": "....."
 
-- name: Call iTop role to create or update a CI
-  gather_facts: false
-  hosts: localhost
-  roles:
-    - schirrms.combodo_ansible.itop_core_write
+    - name: Call iTop role to create or update a CI
+      ansible.builtin.import_role:
+        name: schirrms.combodo_ansible.itop_core_write
 ~~~
