@@ -1,0 +1,5 @@
+---
+# defaults file for itop
+#
+# origine itop.core.write.xml
+__itop_api_url: "{{ itop_root }}/webservices/rest.php?version={{ itop_ws_version }}"
