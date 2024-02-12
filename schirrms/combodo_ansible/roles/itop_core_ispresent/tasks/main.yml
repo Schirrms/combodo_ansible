@@ -90,6 +90,8 @@
   vars:
     param: 'objects.*.key'
 
+# Caution : Ansible set_fact convert int to string
+# You'll have to use this var as 'itop_found_items | int'
 - name: Get number of items # noqa: jinja[invalid]
   ansible.builtin.set_fact:
-    itop_found_items: "{{ itop_obj_key | length | int }}"
+    itop_found_items: "{{ itop_obj_key | length }}"
