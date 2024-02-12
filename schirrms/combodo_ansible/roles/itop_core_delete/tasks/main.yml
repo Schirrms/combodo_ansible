@@ -72,6 +72,7 @@
     url_password: "{{ itop_ws_auth_pwd }}"
     body: json_data= {
       "operation":"core/delete",
+      "comment":"{{ __comment_for_delete }}",
       "class":"{{ itop_obj_class }}",
       "key":{{ itop_key | to_json }},
       "simulate":{{ itop_core_delete_simulate }}
