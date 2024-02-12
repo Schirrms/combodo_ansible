@@ -1,8 +1,17 @@
 # combodo-ansible
 
-This is just a role conversion of Combodo's iTop Ansible playbooks.
+This was just a role conversion of Combodo's iTop Ansible playbooks.
 
-If this is your first encounter with Ansible for iTop, I created also some (1, at this time 😉) test sets in this other repo:
+Primarily intended to focus on the conversion of the Combodo's itop.core.write.yml playbook, I finally added complementary roles:
+
+| role name | brief description |
+| --------- | ----------------- |
+| itop_core_write | allow to create or update any FunctionalCI in iTop |
+| itop_core_read | To retrieve in an Ansible Playbook any iTop values of a CI |
+| itop_core_ispresent | queries the iTop instance to know the result of the reconciliation. Output is a number, can be 0, 1 ore more, depending on the query |
+| itop_core_delete | (try to) remove a CI from iTop, with all dependencies (like in the UI) |
+
+If this is your first encounter with Ansible for iTop, I created also some (4, at this time 😉) test sets in this other repo:
 [Combodo_Ansible_Demo](https://github.com/Schirrms/Combodo_Ansible_Demo)
 
 ## Goal, origins
@@ -93,3 +102,5 @@ Once the requirement in place, you can  use it in your playbook like this:
       ansible.builtin.import_role:
         name: schirrms.combodo_ansible.itop_core_write
 ~~~
+
+You can found more explanations in the Demo repo.

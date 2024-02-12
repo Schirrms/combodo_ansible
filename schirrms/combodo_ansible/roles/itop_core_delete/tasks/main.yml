@@ -25,6 +25,9 @@
 #  Other parameters dedicated to iTop's REST/JSON API need to be given to that playbook:
 #  - itop_obj_class = Class of CI to be written
 #  - itop_key = Set of attributes to be used for the reconciliation
+#  - itop_core_delete_simulate: "true" or "false" with the quotes!
+#                               "true" : no deletion (default value)
+#                               "false": DELETION!
 # Please, refer to iTop's wiki about REST/JSON services for more details on these parameters.
 #
 # Output parameters:
@@ -62,12 +65,6 @@
   ansible.builtin.fail:
     msg: "Unable to start CI deletion, uniqueness result is {{ itop_found_items }}, should be 1"
   when: ( itop_found_items | int ) != 1
-
-# deletion using the key
-- name: Building the deletion key record
-  ansible.builtin.set_fact:
-    __itop_int_key:
-      "id": "{{ itop_obj_key[0] }}"
 
 - name: Delete the CI
   ansible.builtin.uri:
