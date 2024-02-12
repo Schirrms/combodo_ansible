@@ -92,4 +92,4 @@
 
 - name: Get number of items # noqa: jinja[invalid]
   ansible.builtin.set_fact:
-    itop_found_items: "{{ itop_obj_key | length }}"
+    itop_found_items: "{{ itop_obj_key | length | int }}"
