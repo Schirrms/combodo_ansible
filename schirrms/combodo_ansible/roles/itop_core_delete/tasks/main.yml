@@ -67,7 +67,7 @@
 - name: Building the deletion key record
   ansible.builtin.set_fact:
     __itop_int_key:
-      "id": "{{ itop_obj_key }}"
+      "id": "{{ itop_obj_key[0] }}"
 
 - name: Delete the CI
   ansible.builtin.uri:
@@ -80,7 +80,7 @@
       "operation":"core/delete",
       "comment":"{{ __comment_for_delete }}",
       "class":"{{ itop_obj_class }}",
-      "key":{{ __itop_int_key | to_json }},
+      "key":{{ _itop_int_key | to_json }},
       "simulate":{{ itop_core_delete_simulate }}
       }
     return_content: true
