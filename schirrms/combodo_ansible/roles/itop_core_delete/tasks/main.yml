@@ -63,6 +63,12 @@
     msg: "Unable to start CI deletion, uniqueness result is {{ itop_found_items }}, should be 1"
   when: ( itop_found_items | int ) != 1
 
+# deletion using the key
+- name: Building the deletion key record
+  ansible.builtin.set_fact:
+    __itop_int_key:
+      "id": "{{ itop_obj_key }}"
+
 - name: Delete the CI
   ansible.builtin.uri:
     url: "{{ __itop_api_url }}"
@@ -74,7 +80,7 @@
       "operation":"core/delete",
       "comment":"{{ __comment_for_delete }}",
       "class":"{{ itop_obj_class }}",
-      "key":{{ itop_key | to_json }},
+      "key":{{ __itop_int_key | to_json }},
       "simulate":{{ itop_core_delete_simulate }}
       }
     return_content: true
