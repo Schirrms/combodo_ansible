@@ -52,7 +52,7 @@
 
 - name: Build control list
   ansible.builtin.set_fact:
-    itop_fields_list: "{{ itop_fields.keys() | join(', ') }}"
+    itop_fields_list: "{{ itop_key.keys() | join(', ') }}"
 
 - name: Count the number of items
   ansible.builtin.uri:
