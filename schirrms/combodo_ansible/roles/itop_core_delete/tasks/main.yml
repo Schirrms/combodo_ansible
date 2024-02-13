@@ -94,7 +94,7 @@
       ansible.builtin.set_fact:
         itop_code: "{{ __itop_jsondata | json_query('code') }}"
         itop_message: "{{ __itop_jsondata | json_query('message') }}"
-      changed_when: (itop_message | regex_search('^\d+','\\1') | int) > 0
+      changed_when: (itop_message | regex_search('^Deleted:\s*(\d+)','\1') | int) > 0
 
     - name: Display error, if any
       ansible.builtin.fail:
