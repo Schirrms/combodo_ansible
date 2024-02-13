@@ -63,36 +63,40 @@
 
 - name: Abort if uniqueness is not OK
   ansible.builtin.fail:
-    msg: "Unable to start CI deletion, uniqueness result is {{ itop_found_items }}, should be 1"
-  when: ( itop_found_items | int ) != 1
+    msg: "Unable to start CI deletion, uniqueness result is {{ itop_found_items }}, should be 0 or 1"
+  when: ( itop_found_items | int ) > 1
 
 - name: Delete the CI
-  ansible.builtin.uri:
-    url: "{{ __itop_api_url }}"
-    method: POST
-    force_basic_auth: true
-    url_username: "{{ itop_ws_auth_user }}"
-    url_password: "{{ itop_ws_auth_pwd }}"
-    body: json_data= {
-      "operation":"core/delete",
-      "comment":"{{ __comment_for_delete }}",
-      "class":"{{ itop_obj_class }}",
-      "key":{{ itop_key | to_json }},
-      "simulate":{{ itop_core_delete_simulate }}
-      }
-    return_content: true
-  register: response
+  when: ( itop_found_items | int ) == 1
+  block:
+    - name: Call iTop API for actual deletion
+      ansible.builtin.uri:
+        url: "{{ __itop_api_url }}"
+        method: POST
+        force_basic_auth: true
+        url_username: "{{ itop_ws_auth_user }}"
+        url_password: "{{ itop_ws_auth_pwd }}"
+        body: json_data= {
+          "operation":"core/delete",
+          "comment":"{{ __comment_for_delete }}",
+          "class":"{{ itop_obj_class }}",
+          "key":{{ itop_key | to_json }},
+          "simulate":{{ itop_core_delete_simulate }}
+          }
+        return_content: true
+      register: response
 
-- name: Save the Json data
-  ansible.builtin.set_fact:
-    __itop_jsondata: "{{ response.content | from_json }}"
+    - name: Save the Json data
+      ansible.builtin.set_fact:
+        __itop_jsondata: "{{ response.content | from_json }}"
 
-- name: Get error code and message # noqa: jinja[invalid]
-  ansible.builtin.set_fact:
-    itop_code: "{{ __itop_jsondata | json_query('code') }}"
-    itop_message: "{{ __itop_jsondata | json_query('message') }}"
+    - name: Get error code and message # noqa: jinja[invalid]
+      ansible.builtin.set_fact:
+        itop_code: "{{ __itop_jsondata | json_query('code') }}"
+        itop_message: "{{ __itop_jsondata | json_query('message') }}"
+      changed_when: (itop_message | regex_search('^\d+','\\1') | int) > 0
 
-- name: Display error, if any
-  ansible.builtin.fail:
-    msg: "{{ itop_message }}"
-  when: itop_code != "0"
+    - name: Display error, if any
+      ansible.builtin.fail:
+        msg: "{{ itop_message }}"
+      when: itop_code != "0"

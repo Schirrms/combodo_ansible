@@ -1,5 +1,5 @@
 #
-# just a conversion of Combodo's itop.core.write.yml into an Ansible rôle
+# just a conversion of Combodo's itop.core.write.yml into an Ansible role
 # Schirrms 2024-02-07
 #
 # Choices :
