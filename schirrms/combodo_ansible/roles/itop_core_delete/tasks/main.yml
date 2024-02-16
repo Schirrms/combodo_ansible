@@ -46,12 +46,14 @@
 - name: Check key variables are defined and not empty
   ansible.builtin.fail:
     msg: "One variable is empty"
-  with_items:
+  when:
+    - not __itop_core_delete_check
+    - __itop_core_delete_check is none
+  loop:
     - "{{ itop_obj_class }}"
     - "{{ itop_key }}"
-  when:
-    - not item
-    - item is none
+  loop_control:
+    loop_var: __itop_core_delete_check
 
 - name: Build control list
   ansible.builtin.set_fact:
