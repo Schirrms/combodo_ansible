@@ -1,12 +1,14 @@
 {
   "cSpell.words": [
-    "CMDB",
-    "fnmatch",
-    "ispresent",
-    "itopvault",
-    "ITSM",
-    "jsondata",
-    "SARL",
-    "webservices"
-  ]
+		"CMDB",
+		"combodo",
+		"fnmatch",
+		"ispresent",
+		"itopvault",
+		"ITSM",
+		"jsondata",
+		"SARL",
+		"webservices"
+	],
+	"ansible.python.interpreterPath": "/bin/python3.11"
 }

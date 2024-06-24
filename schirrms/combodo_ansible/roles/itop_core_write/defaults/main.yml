@@ -2,6 +2,6 @@
 # defaults file for itop
 #
 # origine itop.core.write.xml
-url: "{{ itop_root }}/webservices/rest.php?version={{ itop_ws_version }}"
-comment_for_create: "Created from Ansible application with UUID: {{ itop_ws_ansible_uuid }}"
-comment_for_update: "Updated from Ansible application with UUID: {{ itop_ws_ansible_uuid }}"
+url: "{{ itop_root }}/webservices/rest.php?version={{ itop_ws_version }}" # noqa: var-naming[no-role-prefix]
+comment_for_create: "Created from Ansible application with UUID: {{ itop_ws_ansible_uuid }}" # noqa: var-naming[no-role-prefix]
+comment_for_update: "Updated from Ansible application with UUID: {{ itop_ws_ansible_uuid }}" # noqa: var-naming[no-role-prefix]

@@ -98,3 +98,8 @@
     itop_output_values: "{{ __itop_jsondata | json_query(param) }}"
   vars:
     param: 'objects.*.fields'
+
+- name: Set the ouptut to en empty list in case of a empty answer
+  ansible.builtin.setfact:
+    itop_output_value: []
+  when: itop_output_value is string or itop_output_value is mapping or itop_output_value is not iterable

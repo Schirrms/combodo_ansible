@@ -2,4 +2,4 @@
 # defaults file for itop
 #
 # origin itop.core.write.xml
-__itop_api_url: "{{ itop_root }}/webservices/rest.php?version={{ itop_ws_version }}"
+__itop_api_url: "{{ itop_root }}/webservices/rest.php?version={{ itop_ws_version }}" # noqa: var-naming[no-role-prefix]
