@@ -101,5 +101,5 @@
 
 - name: Set the ouptut to en empty list in case of a empty answer
   ansible.builtin.set_fact:
-    itop_output_value: []
-  when: itop_output_value is string or itop_output_value is mapping or itop_output_value is not iterable
+    itop_output_values: []
+  when: itop_output_values is not defined or itop_output_values is string or itop_output_values is mapping or itop_output_values is not iterable
