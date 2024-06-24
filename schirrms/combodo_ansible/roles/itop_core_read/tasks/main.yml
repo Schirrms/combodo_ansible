@@ -100,6 +100,6 @@
     param: 'objects.*.fields'
 
 - name: Set the ouptut to en empty list in case of a empty answer
-  ansible.builtin.setfact:
+  ansible.builtin.set_fact:
     itop_output_value: []
   when: itop_output_value is string or itop_output_value is mapping or itop_output_value is not iterable
