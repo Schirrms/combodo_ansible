@@ -1,0 +1,110 @@
+#
+# Based on former role itop_core_read, this task does the 'read'
+# Schirrms 2024-08-27
+#
+# Choices :
+# 1. all vars used in this role are now prefixed by 'itop_core_'
+# 2. all vars in this task are now prefixed by 'itop_core_read_'
+
+# @copyright   Copyright (C) 2023 Combodo SARL
+# @license     http://opensource.org/licenses/AGPL-3.0
+#
+# This playbook reads a CI in iTop (based on the itop_key reconciliation values) and if the CI
+# exists return the fields as defined in itop_fields
+#
+# Input parameters:
+#  Some are, by default, defined in the ./host_vars/localhost.yml file.
+#  - itop_core_root = Root URL of the iTop application
+#  - itop_core_ws_version = Web Service version
+#  - itop_core_ws_auth_user = User login
+#  - itop_core_ws_auth_pwd = User password
+
+#  Other parameters dedicated to iTop's REST/JSON API need to be given to that playbook:
+#  - itop_core_read_obj_class = Class of CI to be written
+#  - itop_core_read_key = Set of attributes to be used for the reconciliation
+#  - itop_core_read_fields = Set of attributes to be sent back
+# Please, refer to iTop's wiki about REST/JSON services for more details on these parameters.
+#
+# Output parameters:
+#  - itop_core_read_code = Error code sent by iTop's API
+#  - itop_core_read_message = Error message sent by iTop's API
+#  - itop_core_read_obj_key = Key of the queried CI
+#  - itop_core_read_output_values = values of the fields
+#
+---
+
+# If you prefer to encrypt the login account and password in an Ansible vault:
+#  - Uncomment the following 2 lines
+#  - Store the parameter in a local itopvault.yml file
+#  vars_files:
+#    itopvault.yml
+
+# With the argument_specs.yml file in the role, is this control
+# still relevant?
+- name: Check key variables are defined and not empty
+  ansible.builtin.fail:
+    msg: "One variable is empty"
+  when:
+    - not __itop_core_read_check
+    - __itop_core_read_check is none
+  loop:
+    - "{{ itop_core_read_obj_class }}"
+    - "{{ itop_core_read_key }}"
+    - "{{ itop_core_read_fields }}"
+  loop_control:
+    loop_var: __itop_core_read_check
+
+- name: Build control list
+  ansible.builtin.set_fact:
+    itop_core_read_fields_list: "{{ itop_core_read_fields.keys() | join(', ') }}"
+
+- name: Check if CI exists
+  ansible.builtin.uri:
+    url: "{{ __itop_core_api_url }}"
+    method: POST
+    force_basic_auth: true
+    url_username: "{{ itop_core_ws_auth_user }}"
+    url_password: "{{ itop_core_ws_auth_pwd }}"
+    body: json_data= {
+      "operation":"core/get",
+      "class":"{{ itop_core_read_obj_class }}",
+      "key":{{ itop_core_read_key | to_json }},
+      "output_fields":"{{ itop_core_read_fields_list }}"
+      }
+    return_content: true
+  register: itop_core_read_response
+
+- name: Save the Json data
+  ansible.builtin.set_fact:
+    __itop_core_read_jsondata: "{{ itop_core_read_response.content | from_json }}"
+
+- name: Get error code and message
+  ansible.builtin.set_fact:
+    itop_core_read_code: "{{ __itop_core_read_jsondata | json_query('code') }}"
+    itop_core_read_message: "{{ __itop_core_read_jsondata | json_query('message') }}"
+
+- name: Display error, if any
+  ansible.builtin.fail:
+    msg: "{{ itop_core_read_message }}"
+  when: itop_core_read_code != "0"
+
+- name: Get itop_obj_key
+  ansible.builtin.set_fact:
+    itop_core_read_obj_key: "{{ __itop_core_read_jsondata | json_query(param) }}"
+  vars:
+    param: 'objects.*.key'
+
+- name: Get fields
+  ansible.builtin.set_fact:
+    itop_core_read_output_values: "{{ __itop_core_read_jsondata | json_query(param) }}"
+  vars:
+    param: 'objects.*.fields'
+
+- name: Set the output to en empty list in case of a empty answer
+  ansible.builtin.set_fact:
+    itop_core_read_output_values: []
+  when: >
+      itop_core_read_output_values is not defined or
+      itop_core_read_output_values is string or
+      itop_core_read_output_values is mapping or
+      itop_core_read_output_values is not iterable

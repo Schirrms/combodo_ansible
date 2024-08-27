@@ -1,0 +1,65 @@
+# Role input data validation
+# Based on https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_reuse_roles.html#role-argument-validation
+argument_specs:
+  # roles/itop_core/tasks/main.yml entry point
+  main:
+    short_description: Main entry point for the itop_core role
+    description:
+      - validation of the common option needed by this role
+    author:
+      - Schirrms
+    options:
+      itop_core_ws_auth_user:
+        type: "str"
+        required: true
+        description: iTop Rest Username
+
+      itop_core_ws_auth_pwd:
+        type: "str"
+        required: true
+        description: iTop Rest Password
+
+      itop_core_root:
+        type: "str"
+        required: true
+        description: iTop server URL
+
+      itop_core_ws_version:
+        type: "str"
+        required: false
+        default: "1.3"
+        description: "Web Service version"
+
+      itop_core_ws_ansible_uuid:
+        type: "str"
+        required: false
+        default: "ANS_APP1"
+        description: "UUID in iTop of the Ansible application to work with"
+
+      itop_core_ws_ansible_inventory:
+        type: "str"
+        required: false
+        default: "ANS_ITOP_DEV"
+        description: "Name of the inventory to consider"
+
+  # For th itop_core  read task
+  read:
+    short_description: Read the iTop inventory
+    description:
+      - Calling this task will allow you to query the iTop inventory
+    options:
+
+      itop_core_read_obj_class:
+        type: "str"
+        required: true
+        description: "Class of CI to be written"
+
+      itop_core_read_key:
+        type: "str"
+        required: true
+        description: "Set of attributes to be used for the reconciliation"
+
+      itop_core_read_fields:
+        type: "str"
+        required: true
+        description: "Set of attributes to be sent back"

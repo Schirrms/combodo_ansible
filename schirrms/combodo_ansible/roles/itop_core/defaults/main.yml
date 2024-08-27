@@ -1,0 +1,3 @@
+---
+# defaults file for schirrms/combodo_ansible/roles/itop_core
+__itop_core_api_url: "{{ itop_core_root }}/webservices/rest.php?version={{ itop_core_ws_version }}"
