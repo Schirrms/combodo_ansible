@@ -47,8 +47,8 @@ argument_specs:
     short_description: Read the iTop inventory
     description:
       - Calling this task will allow you to query the iTop inventory
+    version_added: 1.2.1
     options:
-
       itop_core_read_obj_class:
         type: "str"
         required: true
