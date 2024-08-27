@@ -49,6 +49,41 @@ argument_specs:
       - Calling this task will allow you to query the iTop inventory
     version_added: 1.2.1
     options:
+      # Begin of common part, to be reproduced in each task
+      itop_core_ws_auth_user:
+        type: "str"
+        required: true
+        description: iTop Rest Username
+
+      itop_core_ws_auth_pwd:
+        type: "str"
+        required: true
+        description: iTop Rest Password
+
+      itop_core_root:
+        type: "str"
+        required: true
+        description: iTop server URL
+
+      itop_core_ws_version:
+        type: "str"
+        required: false
+        default: "1.3"
+        description: "Web Service version"
+
+      itop_core_ws_ansible_uuid:
+        type: "str"
+        required: false
+        default: "ANS_APP1"
+        description: "UUID in iTop of the Ansible application to work with"
+
+      itop_core_ws_ansible_inventory:
+        type: "str"
+        required: false
+        default: "ANS_ITOP_DEV"
+        description: "Name of the inventory to consider"
+      # End of common part
+
       itop_core_read_obj_class:
         type: "str"
         required: true
