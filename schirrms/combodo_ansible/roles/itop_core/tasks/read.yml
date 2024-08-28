@@ -23,6 +23,7 @@
 #  - itop_core_read_obj_class = Class of CI to be written
 #  - itop_core_read_key = Set of attributes to be used for the reconciliation
 #  - itop_core_read_fields = Set of attributes to be sent back
+
 # Please, refer to iTop's wiki about REST/JSON services for more details on these parameters.
 #
 # Output parameters:
@@ -33,14 +34,15 @@
 #
 ---
 
+### Still relevant?
 # If you prefer to encrypt the login account and password in an Ansible vault:
 #  - Uncomment the following 2 lines
 #  - Store the parameter in a local itopvault.yml file
 #  vars_files:
 #    itopvault.yml
 
-# With the argument_specs.yml file in the role, is this control
-# still relevant?
+### With the argument_specs.yml file in the role, is this control
+### still relevant?
 - name: Check key variables are defined and not empty
   ansible.builtin.fail:
     msg: "One variable is empty"
@@ -72,11 +74,11 @@
       "output_fields":"{{ itop_core_read_fields_list }}"
       }
     return_content: true
-  register: itop_core_read_response
+  register: __itop_core_read_response
 
 - name: Save the Json data
   ansible.builtin.set_fact:
-    __itop_core_read_jsondata: "{{ itop_core_read_response.content | from_json }}"
+    __itop_core_read_jsondata: "{{ __itop_core_read_response.content | from_json }}"
 
 - name: Get error code and message
   ansible.builtin.set_fact:

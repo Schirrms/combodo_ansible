@@ -1,0 +1,268 @@
+# write.yml
+# just a conversion of itop_core_write role into a write task member of itop_core role
+# Schirrms 2024-08-28
+#
+# Choices :
+# 1. move the 'vars' section in the playbook into 'defaults', hence allowing to override
+#    them if needed
+# 2. all vars used in this role are now prefixed by 'itop_core_'
+# 3. all vars in this task are now prefixed by 'itop_core_write_'
+#
+# @copyright   Copyright (C) 2023 Combodo SARL
+# @license     http://opensource.org/licenses/AGPL-3.0
+#
+# This playbook writes a CI in iTop i.e. checks if a CI exists, creates it if not and updates it otherwise.
+#
+# Input parameters:
+#  Those parameters are common for all tasks in the role
+#  - itop_core_root = Root URL of the iTop application
+#  - itop_core_ws_version = Web Service version
+#  - itop_core_ws_auth_user = User login
+#  - itop_core_ws_auth_pwd = User password
+
+#  Other parameters dedicated to iTop's REST/JSON API need to be given to that task:
+#  Mandatory
+#  - itop_core_write_obj_class = Class of CI to be written
+#  - itop_core_write_key = Set of attributes to be used for the reconciliation
+#  - itop_core_write_fields = Set of attributes to be sent back
+
+#  Optional
+#  - itop_core_write_output_fields = List of attributes to get from iTop in
+#               'itop_core_write_output_values' dict once creation or update is done.
+#               if itop_core_write_output_fields is not set, 'itop_core_write_output_values'
+#               dict is loaded with the 'itop_core_write_fields' set
+
+# Please, refer to iTop's wiki about REST/JSON services for more details on these parameters.
+#
+# Output parameters:
+#  - itop_core_write_code = Error code sent by iTop's API
+#  - itop_core_write_obj_key = Key of the created or updated CI
+#  - itop_core_write_output_values = values of the fields after creation/update
+#
+---
+
+### Stil Relevant?
+# If you prefer to encrypt the login account and password in an Ansible vault:
+#  - Uncomment the following 2 lines
+#  - Store the parameter in a local itopvault.yml file
+#  vars_files:
+#    itopvault.yml
+
+### Are those tests still needed with the argument_specs in place ?
+# no more test of "{{ itop_output_fields }}" as it is no more mandatory
+- name: Check key variables are defined and not empty
+  ansible.builtin.fail:
+    msg: "One variable is empty"
+  when:
+    - not __itop_core_write_check
+    - __itop_core_write_check is none
+  loop:
+    - "{{ itop_core_write_obj_class }}"
+    - "{{ itop_core_write_key }}"
+    - "{{ itop_core_write_fields }}"
+  loop_control:
+    loop_var: __itop_core_write_check
+
+- name: Build control list
+  ansible.builtin.set_fact:
+    itop_fields_list: "{{ itop_core_write_fields.keys() | join(', ') }}"
+
+- name: Check if CI exists
+  block:
+    - name: Call operation core/get
+      ansible.builtin.uri:
+        url: "{{ __itop_core_api_url }}"
+        method: POST
+        force_basic_auth: true
+        url_username: "{{ itop_core_ws_auth_user }}"
+        url_password: "{{ itop_core_ws_auth_pwd }}"
+        body: json_data= {
+          "operation":"core/get",
+          "class":"{{ itop_core_write_obj_class }}",
+          "key":{{ itop_key | to_json }},
+          "output_fields":"{{ itop_core_write_fields_list }}"
+          }
+        return_content: true
+      register: __itop_core_write_response
+
+    - name: Save the Json data
+      ansible.builtin.set_fact:
+        __itop_core_write_jsondata: "{{ __itop_core_write_response.content | from_json }}"
+
+    - name: Get error code and message
+      ansible.builtin.set_fact:
+        itop_core_write_code: "{{ __itop_core_write_jsondata | json_query('code') }}"
+        itop_core_write_message: "{{ __itop_core_write_jsondata | json_query('message') }}"
+
+    - name: Display error, if any
+      ansible.builtin.fail:
+        msg: "{{ itop_core_write_message }}"
+      when: itop_core_write_code != "0"
+
+    - name: Get itop_obj_key
+      ansible.builtin.set_fact:
+        itop_core_write_obj_key: "{{ __itop_core_write_jsondata | json_query(param) }}"
+      vars:
+        param: 'objects.*.key'
+
+    - name: Get fields
+      ansible.builtin.set_fact:
+        __itop_core_write_get_fields: "{{ jsondata | json_query(param) }}"
+      vars:
+        param: 'objects.*.fields'
+
+- name: Create CI
+  when: itop_core_write_obj_key == "0" or itop_core_write_obj_key == ""
+  block:
+    - name: Call operation core/create
+      ansible.builtin.uri:
+        url: "{{ __itop_core_api_url }}"
+        method: POST
+        force_basic_auth: true
+        url_username: "{{ itop_core_ws_auth_user }}"
+        url_password: "{{ itop_core_ws_auth_pwd }}"
+        body: json_data= {
+          "operation":"core/create",
+          "comment":"{{ __itop_core_write_comment_for_create }}",
+          "class":"{{ itop_core_write_obj_class }}",
+          "fields":{{ itop_core_write_fields | to_json }},
+          "output_fields":"{{ itop_core_write_fields_list }}"
+          }
+        return_content: true
+      register: __itop_core_write_response
+
+    - name: Save the Json data
+      ansible.builtin.set_fact:
+        __itop_core_write_jsondata: "{{ __itop_core_write_response.content | from_json }}"
+
+    - name: Get error code and message # noqa: jinja[invalid]
+      ansible.builtin.set_fact:
+        itop_core_write_code: "{{ __itop_core_write_jsondata | json_query('code') }}"
+        itop_core_write_message: "{{ __itop_core_write_jsondata | json_query('message') }}"
+
+    - name: Display error, if any
+      ansible.builtin.fail:
+        msg: "{{ itop_core_write_message }}"
+      when: itop_core_write_code != "0"
+
+    - name: Register operation
+      ansible.builtin.set_fact:
+        __itop_core_write_operation: "{{ 'been created' }}"
+      changed_when: itop_core_write_code == "0"
+
+- name: Update CI
+  when: itop_core_write_obj_key != "0" and itop_core_write_obj_key != ""
+  block:
+    - name: Call operation core/update
+      ansible.builtin.uri:
+        url: "{{ __itop_core_api_url }}"
+        method: POST
+        force_basic_auth: true
+        url_username: "{{ itop_core_ws_auth_user }}"
+        url_password: "{{ itop_core_ws_auth_pwd }}"
+        body: json_data= {
+          "operation":"core/update",
+          "comment":"{{ __itop_core_write_comment_for_update }}",
+          "class":"{{ itop_core_write_obj_class }}",
+          "key":{{ itop_core_write_key | to_json }},
+          "fields":{{ itop_core_write_fields | to_json }},
+          "output_fields":"{{ itop_core_write_fields_list }}"
+          }
+        return_content: true
+      register: __itop_core_write_response
+
+    - name: Save the Json data
+      ansible.builtin.set_fact:
+        __itop_core_write_jsondata: "{{ __itop_core_write_response.content | from_json }}"
+
+    - name: Get error code and message
+      ansible.builtin.set_fact:
+        itop_core_write_code: "{{ __itop_core_write_jsondata | json_query('code') }}"
+        itop_core_write_message: "{{ __itop_core_write_jsondata | json_query('message') }}"
+
+    - name: Display error, if any
+      ansible.builtin.fail:
+        msg: "{{ itop_core_write_message }}"
+      when: itop_core_write_code != "0"
+
+    - name: Get fields
+      ansible.builtin.set_fact:
+        __itop_core_write_set_fields: "{{ __itop_core_write_jsondata | json_query(param) }}"
+      vars:
+        param: 'objects.*.fields'
+
+    - name: Register operation
+      ansible.builtin.set_fact:
+        __itop_core_write_operation: "{{ 'been updated' }}"
+      changed_when: __itop_core_write_get_fields != __itop_core_write_set_fields
+      when: __itop_core_write_get_fields != __itop_core_write_set_fields
+
+    - name: Register no change
+      ansible.builtin.set_fact:
+        __itop_core_write_operation: "{{ 'not been modified' }}"
+      when: __itop_core_write_get_fields == __itop_core_write_set_fields
+
+- name: Operation is successful at this stage
+  block:
+    - name: Get itop_obj_key
+      ansible.builtin.set_fact:
+        itop_core_write_obj_key: "{{ __itop_core_write_jsondata | json_query(param) }}"
+      vars:
+        param: 'objects.*.key'
+
+    - name: Display itop_obj_key
+      ansible.builtin.debug:
+        msg: "Object of class {{ itop_core_write_obj_class }} with key {{ itop_core_write_obj_key }} has {{ __itop_core_write_operation }}"
+
+    - name: Set returned variables
+      ansible.builtin.set_fact:
+        itop_core_write_code: = "0"
+        # itop_core_write_obj_key: "{{ itop_core_write_obj_key }}"
+
+    - name: Set default value to return
+      ansible.builtin.set_fact:
+        itop_core_write_out_fields: "{{ itop_core_write_fields_list }}"
+
+    - name: Select values to return
+      ansible.builtin.set_fact:
+        itop_core_write_out_fields: "{{ itop_core_write_output_fields }}"
+        itop_core_write_output_fields: ''
+      when:
+        - itop_core_write_output_fields is defined
+        - itop_core_write_output_fields|length > 0
+
+    - name: Get actual values
+      ansible.builtin.uri:
+        url: "{{ __itop_core_api_url }}"
+        method: POST
+        force_basic_auth: true
+        url_username: "{{ itop_core_ws_auth_user }}"
+        url_password: "{{ itop_core_ws_auth_pwd }}"
+        body: json_data= {
+          "operation":"core/get",
+          "class":"{{ itop_core_write_obj_class }}",
+          "key":{{ itop_core_write_key | to_json }},
+          "output_fields":"{{ itop_core_write_out_fields }}"
+          }
+        return_content: true
+      register: __itop_core_write_response
+
+    - name: Save the Json data
+      ansible.builtin.set_fact:
+        __itop_core_write_jsondata: "{{ __itop_core_write_response.content | from_json }}"
+
+    - name: Get error code and message
+      ansible.builtin.set_fact:
+        itop_core_write_code: "{{ __itop_core_write_jsondata | json_query('code') }}"
+        itop_core_write_message: "{{ __itop_core_write_jsondata | json_query('message') }}"
+
+    - name: Display error, if any
+      ansible.builtin.fail:
+        msg: "{{ itop_core_write_message }}"
+      when: itop_core_write_code != "0"
+
+    - name: Get fields
+      ansible.builtin.set_fact:
+        itop_core_write_output_values: "{{ __itop_core_write_jsondata | json_query(param) }}"
+      vars:
+        param: 'objects.*.fields'

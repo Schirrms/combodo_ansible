@@ -1,0 +1,103 @@
+# ispresent.yml : tasks ispresent in role itop_core
+# Based onCombodo's itop.core.write.yml, this role count the number of items
+# in the iTop CMDB for a specific reconciliation keyset
+# Schirrms 2024-02-12
+#
+# Choices :
+# 1. move the 'vars' section in the playbook into 'defaults', hence allowing to override
+#    them if needed
+# 2. all vars used in this role are now prefixed by 'itop_core_'
+# 3. all vars in this task are now prefixed by 'itop_core_ispresent_'
+#
+# @copyright   Copyright (C) 2023 Combodo SARL
+# @license     http://opensource.org/licenses/AGPL-3.0
+#
+# This playbook reads check if there are CI(s) in iTop (based on the itop_key reconciliation values)
+# and return the number of matching CIs
+#
+# Input parameters:
+#  Those parameters are common for all tasks in the role
+#  - itop_core_root          = Root URL of the iTop application
+#  - itop_core_ws_version    = Web Service version
+#  - itop_core_ws_auth_user  = User login
+#  - itop_core_ws_auth_pwd   = User password
+
+#  Other parameters dedicated to iTop's REST/JSON API need to be given to that task:
+#  - itop_core_ispresent_obj_class  = Class of CI to be written
+#  - itop_core_ispresent_key        = Set of attributes to be used for the reconciliation
+
+# Please, refer to iTop's wiki about REST/JSON services for more details on these parameters.
+#
+# Output parameters:
+#  - itop_core_ispresent_code = Error code sent by iTop's API
+#  - itop_core_ispresent_message = Error message sent by iTop's API
+#  - itop_core_ispresent_obj_key = Key of the queried CI - result as a list
+#  - itop_core_ispresent_found_items = Number of items found with the given 'itop_key' reconciliation set
+#
+---
+
+### Stil relevant?
+# If you prefer to encrypt the login account and password in an Ansible vault:
+#  - Uncomment the following 2 lines
+#  - Store the parameter in a local itopvault.yml file
+#  vars_files:
+#    itopvault.yml
+
+### Are those tests still needed with the argument_specs in place ?
+- name: Check key variables are defined and not empty
+  ansible.builtin.fail:
+    msg: "One variable is missing or empty"
+  when:
+    - not __itop_core_ispresent_check
+    - __itop_core_ispresent_check is none
+  loop:
+    - "{{ itop_core_ispresent_obj_class }}"
+    - "{{ itop_core_ispresent_key }}"
+  loop_control:
+    loop_var: __itop_core_ispresent_check
+
+- name: Build control list
+  ansible.builtin.set_fact:
+    itop_core_ispresent_fields_list: "{{ itop_core_ispresent_key.keys() | join(', ') }}"
+
+- name: Count the number of items
+  ansible.builtin.uri:
+    url: "{{ __itop_core_api_url }}"
+    method: POST
+    force_basic_auth: true
+    url_username: "{{ itop_core_ws_auth_user }}"
+    url_password: "{{ itop_core_ws_auth_pwd }}"
+    body: json_data= {
+      "operation":"core/get",
+      "class":"{{ itop_core_ispresent_obj_class }}",
+      "key":{{ itop_core_ispresent_key | to_json }},
+      "output_fields":"id"
+      }
+    return_content: true
+  register: __itop_core_ispresent_response
+
+- name: Save the Json data
+  ansible.builtin.set_fact:
+    __itop_core_ispresent_jsondata: "{{ __itop_core_ispresent_response.content | from_json }}"
+
+- name: Get error code and message
+  ansible.builtin.set_fact:
+    itop_core_ispresent_code: "{{ __itop_core_ispresent_jsondata | json_query('code') }}"
+    itop_core_ispresent_message: "{{ __itop_core_ispresent_jsondata | json_query('message') }}"
+
+- name: Display error, if any
+  ansible.builtin.fail:
+    msg: "{{ itop_core_ispresent_message }}"
+  when: itop_core_ispresent_code != "0"
+
+- name: Get itop_obj_key # noqa: jinja[invalid]
+  ansible.builtin.set_fact:
+    itop_core_ispresent_obj_key: "{{ __itop_core_ispresent_jsondata | json_query(param) }}"
+  vars:
+    param: 'objects.*.key'
+
+# Caution : Ansible set_fact convert int to string
+# You'll have to use this var as 'itop_found_items | int'
+- name: Get number of items # noqa: jinja[invalid]
+  ansible.builtin.set_fact:
+    itop_core_ispresent_found_items: "{{ itop_core_ispresent_obj_key | length }}"
