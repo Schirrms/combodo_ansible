@@ -1,48 +1,40 @@
-#
+# task read.yml, part of role itop_core
 # Based on former role itop_core_read, this task does the 'read'
 # Schirrms 2024-08-27
 #
-# Choices :
-# 1. all vars used in this role are now prefixed by 'itop_core_'
-# 2. all vars in this task are now prefixed by 'itop_core_read_'
-
 # @copyright   Copyright (C) 2023 Combodo SARL
 # @license     http://opensource.org/licenses/AGPL-3.0
 #
 # This playbook reads a CI in iTop (based on the itop_key reconciliation values) and if the CI
 # exists return the fields as defined in itop_fields
 #
-# Input parameters:
-#  Some are, by default, defined in the ./host_vars/localhost.yml file.
-#  - itop_core_root = Root URL of the iTop application
-#  - itop_core_ws_version = Web Service version
-#  - itop_core_ws_auth_user = User login
-#  - itop_core_ws_auth_pwd = User password
+# Common role input parameters:
+#  mandatory:
+#  - itop_core_root                 = Root URL of the iTop application
+#  - itop_core_ws_auth_user         = User login
+#  - itop_core_ws_auth_pwd          = User password
+#  optional:
+#  - itop_core_ws_version           = Web Service version (default 1.3)
+#  - itop_core_ws_ansible_uuid      = UUID in iTop of the Ansible application to work with (default ANS_APP1)
+#  - itop_core_ws_ansible_inventory = Name of the inventory to consider (no use for a read, default ANS_ITOP)
 
-#  Other parameters dedicated to iTop's REST/JSON API need to be given to that playbook:
-#  - itop_core_read_obj_class = Class of CI to be written
-#  - itop_core_read_key = Set of attributes to be used for the reconciliation
-#  - itop_core_read_fields = Set of attributes to be sent back
+# Task specific input parameters:
+#  mandatory:
+#  - itop_core_read_obj_class       = Class of CI to be read
+#  - itop_core_read_key             = Set of attributes to be used for the reconciliation
+#  - itop_core_read_fields          = Set of attributes to be sent back
 
 # Please, refer to iTop's wiki about REST/JSON services for more details on these parameters.
 #
 # Output parameters:
-#  - itop_core_read_code = Error code sent by iTop's API
-#  - itop_core_read_message = Error message sent by iTop's API
-#  - itop_core_read_obj_key = Key of the queried CI
-#  - itop_core_read_output_values = values of the fields
+#  - itop_core_read_code            = Return code sent by iTop's API
+#  - itop_core_read_message         = Error message sent by iTop's API
+#  - itop_core_read_obj_key         = Keys (ids) of the queried CI
+#  - itop_core_read_output_values   = all values of the selected fields
 #
 ---
 
-### Still relevant?
-# If you prefer to encrypt the login account and password in an Ansible vault:
-#  - Uncomment the following 2 lines
-#  - Store the parameter in a local itopvault.yml file
-#  vars_files:
-#    itopvault.yml
-
-### With the argument_specs.yml file in the role, is this control
-### still relevant?
+### Are those tests still needed with the argument_specs in place?
 - name: Check key variables are defined and not empty
   ansible.builtin.fail:
     msg: "One variable is empty"
@@ -58,7 +50,7 @@
 
 - name: Build control list
   ansible.builtin.set_fact:
-    itop_core_read_fields_list: "{{ itop_core_read_fields.keys() | join(', ') }}"
+    __itop_core_read_fields_list: "{{ itop_core_read_fields.keys() | join(', ') }}"
 
 - name: Check if CI exists
   ansible.builtin.uri:
@@ -71,7 +63,7 @@
       "operation":"core/get",
       "class":"{{ itop_core_read_obj_class }}",
       "key":{{ itop_core_read_key | to_json }},
-      "output_fields":"{{ itop_core_read_fields_list }}"
+      "output_fields":"{{ __itop_core_read_fields_list }}"
       }
     return_content: true
   register: __itop_core_read_response

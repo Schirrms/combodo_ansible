@@ -1,9 +1,9 @@
 ---
 # defaults file for schirrms/combodo_ansible/roles/itop_core
 __itop_core_api_url: "{{ itop_core_root }}/webservices/rest.php?version={{ itop_core_ws_version }}"
-__itop_core_write_comment_for_create: "Created from Ansible application with UUID: {{ itop_core_ws_ansible_uuid }}"
-__itop_core_write_comment_for_update: "Updated from Ansible application with UUID: {{ itop_core_ws_ansible_uuid }}"
-__itop_core_delete_comment_for_delete: "Deleted from Ansible application with UUID: {{ itop_core_ws_ansible_uuid }}"
+itop_core_write_create_comment: "Created from Ansible application with UUID: {{ itop_core_ws_ansible_uuid }}"
+itop_core_write_update_comment: "Updated from Ansible application with UUID: {{ itop_core_ws_ansible_uuid }}"
+itop_core_delete_comment: "Deleted from Ansible application with UUID: {{ itop_core_ws_ansible_uuid }}"
 # by default, the deletion is in simulate mode
 # you'll have to set itop_core_delete_simulate to false before calling the
 # role to actually launch a delete operation

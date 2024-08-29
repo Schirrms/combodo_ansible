@@ -41,7 +41,7 @@ argument_specs:
       itop_core_ws_ansible_inventory:
         type: "str"
         required: false
-        default: "ANS_ITOP_DEV"
+        default: "ANS_ITOP"
         description: "Name of the inventory to consider"
       # End of common part
 
@@ -53,7 +53,9 @@ argument_specs:
       itop_core_read_key:
         type: "str"
         required: true
-        description: "Set of attributes to be used for the reconciliation"
+        description:
+          - "Set of attributes to be used for the reconciliation"
+          - "or id of the record"
 
       itop_core_read_fields:
         type: "dict"
@@ -98,7 +100,7 @@ argument_specs:
       itop_core_ws_ansible_inventory:
         type: "str"
         required: false
-        default: "ANS_ITOP_DEV"
+        default: "ANS_ITOP"
         description: "Name of the inventory to consider"
       # End of common part
 
@@ -110,7 +112,9 @@ argument_specs:
       itop_core_write_key:
         type: "str"
         required: true
-        description: "Set of attributes to be used for the reconciliation"
+        description:
+          - "Set of attributes to be used for the reconciliation"
+          - "or id of the record"
 
       itop_core_write_fields:
         type: "dict"
@@ -126,6 +130,16 @@ argument_specs:
           - "Send back the new values in the dict `itop_core_write_output_values`"
           - "by default, the returned value list is the list defined in `itop_core_write_fields`"
           - "If `itop_core_write_output_fields` is set, then this define the list of values that will be sent back"
+
+      itop_core_write_create_comment:
+        type: "str"
+        required: false
+        description: "A comment set in iTop while creating an object"
+
+      itop_core_write_update_comment:
+        type: "str"
+        required: false
+        description: "A comment set in iTop while updating an object"
 
   # For the itop_core ispresent task
   ispresent:
@@ -167,7 +181,7 @@ argument_specs:
       itop_core_ws_ansible_inventory:
         type: "str"
         required: false
-        default: "ANS_ITOP_DEV"
+        default: "ANS_ITOP"
         description: "Name of the inventory to consider"
       # End of common part
 
@@ -179,7 +193,9 @@ argument_specs:
       itop_core_ispresent_key:
         type: "str"
         required: true
-        description: "Set of attributes to be used for the reconciliation"
+        description:
+          - "Set of attributes to be used for the reconciliation"
+          - "or id of the record"
 
   # For the itop_core ispresent task
   delete:
@@ -222,7 +238,7 @@ argument_specs:
       itop_core_ws_ansible_inventory:
         type: "str"
         required: false
-        default: "ANS_ITOP_DEV"
+        default: "ANS_ITOP"
         description: "Name of the inventory to consider"
       # End of common part
 
@@ -231,10 +247,12 @@ argument_specs:
         required: true
         description: "Class of CI to delete"
 
-      itop_core_ispresent_key:
+      itop_core_delete_key:
         type: "str"
         required: true
-        description: "Set of attributes to be used for the reconciliation"
+        description:
+          - "Set of attributes to be used for the reconciliation"
+          - "or id of the record"
 
       itop_core_delete_simulate:
         type: "str"
@@ -247,3 +265,8 @@ argument_specs:
           - "Determines if the deletion is to be done"
           - "if set to 'false', the deletion will be done"
           - "if set to 'true', there will be no actual deletion"
+
+      itop_core_delete_comment:
+        type: "str"
+        required: false
+        description: "A comment set in iTop while deleting an object"

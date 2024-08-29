@@ -1,33 +1,34 @@
-# delete.yml task in itop_core role
-# Based onCombodo's itop.core.write.yml, this tasks delete (or simulate a delete)
-# a iTop CI
+# delete.yml task, part of role itop_core
+# Just a conversion of itop_core_delete role into a delete task member of itop_core role
 # Schirrms 2024-08-28
 #
-# Choices :
-# 1. move the 'vars' section in the playbook into 'defaults', hence allowing to override
-#    them if needed
-# 2. all vars used in this role are now prefixed by 'itop_core_'
-# 3. all vars in this task are now prefixed by 'itop_core_delete_'
-#
+
 # @copyright   Copyright (C) 2023 Combodo SARL
 # @license     http://opensource.org/licenses/AGPL-3.0
 #
 # This playbook check if a iTop CI is unique (based on the itop_key reconciliation values)
 # and if this is true, try to delete it
 #
-# Input parameters:
-#  Those parameters are common for all tasks in the role
-#  - itop_core_root          = Root URL of the iTop application
-#  - itop_core_ws_version    = Web Service version
-#  - itop_core_ws_auth_user  = User login
-#  - itop_core_ws_auth_pwd   = User password
+# Common role input parameters:
+#  mandatory:
+#  - itop_core_root                 = Root URL of the iTop application
+#  - itop_core_ws_auth_user         = User login
+#  - itop_core_ws_auth_pwd          = User password
+#  optional:
+#  - itop_core_ws_version           = Web Service version (default 1.3)
+#  - itop_core_ws_ansible_uuid      = UUID in iTop of the Ansible application to work with (default ANS_APP1)
+#  - itop_core_ws_ansible_inventory = Name of the inventory to consider (no use for a read, default ANS_ITOP)
 
-#  Other parameters dedicated to iTop's REST/JSON API need to be given to that task:
-#  - itop_core_delete_obj_class  = Class of CI to be written
-#  - itop_core_delete_key        = Set of attributes to be used for the reconciliation
-#  - itop_core_delete_simulate   =  "true" or "false" with the quotes! (a string, not a boolean)
-#                                   "true" : no deletion (default value)
-#                                   "false": DELETION!
+#  Task specific input parameters:
+#  mandatory:
+#  - itop_core_delete_obj_class     = Class of CI to be written
+#  - itop_core_delete_key           = Set of attributes to be used for the reconciliation
+#                                     or id of the record to delete
+#  optional:
+#  - itop_core_delete_simulate      =  "true" or "false" with the quotes! (a string, not a boolean)
+#                                      * "true" : no deletion (default value)
+#                                      * "false": DELETION!
+#  - itop_core_delete_comment       = A comment set in iTop while deleting an object
 
 # Please, refer to iTop's wiki about REST/JSON services for more details on these parameters.
 #
@@ -38,14 +39,7 @@
 #
 ---
 
-### Stil relevant?
-# If you prefer to encrypt the login account and password in an Ansible vault:
-#  - Uncomment the following 2 lines
-#  - Store the parameter in a local itopvault.yml file
-#  vars_files:
-#    itopvault.yml
-
-### Are those tests still needed with the argument_specs in place ?
+### Are those tests still needed with the argument_specs in place?
 - name: Check key variables are defined and not empty
   ansible.builtin.fail:
     msg: "One variable is empty"
@@ -57,10 +51,6 @@
     - "{{ itop_core_delete_key }}"
   loop_control:
     loop_var: __itop_core_delete_check
-
-- name: Build control list
-  ansible.builtin.set_fact:
-    itop_core_delete_fields_list: "{{ itop_core_delete_key.keys() | join(', ') }}"
 
 - name: Check the uniqueness of the CI to remove
   ansible.builtin.include_tasks:
@@ -86,10 +76,10 @@
         url_password: "{{ itop_core_ws_auth_pwd }}"
         body: json_data= {
           "operation":"core/delete",
-          "comment":"{{ __itop_core_delete_comment_for_delete }}",
+          "comment":"{{ itop_core_delete_comment }}",
           "class":"{{ itop_core_delete_obj_class }}",
           "key":{{ itop_core_delete_key | to_json }},
-          "simulate":{{ itop_core_delete_simulate }}
+          "simulate":"{{ itop_core_delete_simulate }}"
           }
         return_content: true
       register: __itop_core_delete_response
