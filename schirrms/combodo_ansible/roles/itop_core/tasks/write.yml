@@ -99,7 +99,7 @@
 
     - name: Get fields
       ansible.builtin.set_fact:
-        __itop_core_write_get_fields: "{{ jsondata | json_query(param) }}"
+        __itop_core_write_get_fields: "{{ __itop_core_write_jsondata | json_query(param) }}"
       vars:
         param: 'objects.*.fields'
 
