@@ -35,17 +35,17 @@
 ---
 
 ### Are those tests still needed with the argument_specs in place ?
-- name: Check key variables are defined and not empty
-  ansible.builtin.fail:
-    msg: "One variable is missing or empty"
-  when:
-    - not __itop_core_ispresent_check
-    - __itop_core_ispresent_check is none
-  loop:
-    - "{{ itop_core_ispresent_obj_class }}"
-    - "{{ itop_core_ispresent_key }}"
-  loop_control:
-    loop_var: __itop_core_ispresent_check
+# - name: Check key variables are defined and not empty
+#   ansible.builtin.fail:
+#     msg: "One variable is missing or empty"
+#   when:
+#     - not __itop_core_ispresent_check
+#     - __itop_core_ispresent_check is none
+#   loop:
+#     - "{{ itop_core_ispresent_obj_class }}"
+#     - "{{ itop_core_ispresent_key }}"
+#   loop_control:
+#     loop_var: __itop_core_ispresent_check
 
 - name: Count the number of items
   ansible.builtin.uri:

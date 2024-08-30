@@ -40,17 +40,17 @@
 ---
 
 ### Are those tests still needed with the argument_specs in place?
-- name: Check key variables are defined and not empty
-  ansible.builtin.fail:
-    msg: "One variable is empty"
-  when:
-    - not __itop_core_delete_check
-    - __itop_core_delete_check is none
-  loop:
-    - "{{ itop_core_delete_obj_class }}"
-    - "{{ itop_core_delete_key }}"
-  loop_control:
-    loop_var: __itop_core_delete_check
+# - name: Check key variables are defined and not empty
+#   ansible.builtin.fail:
+#     msg: "One variable is empty"
+#   when:
+#     - not __itop_core_delete_check
+#     - __itop_core_delete_check is none
+#   loop:
+#     - "{{ itop_core_delete_obj_class }}"
+#     - "{{ itop_core_delete_key }}"
+#   loop_control:
+#     loop_var: __itop_core_delete_check
 
 - name: Check the uniqueness of the CI to remove
   ansible.builtin.include_tasks:
@@ -92,7 +92,9 @@
       ansible.builtin.set_fact:
         itop_core_delete_code: "{{ __itop_core_delete_jsondata | json_query('code') }}"
         itop_core_delete_message: "{{ __itop_core_delete_jsondata | json_query('message') }}"
-        __itop_core_delete_change: "{{ __itop_core_delete_jsondata | json_query('message') | regex_search('^Deleted:\\s*(\\d+)', '\\1') | first }}"
+        __itop_core_delete_change: |
+            "{{ __itop_core_delete_jsondata | json_query('message') |
+            default('') | regex_search('^Deleted:\\s*(\\d+)', '\\1') | first }}"
       changed_when: __itop_core_delete_change | int > 0
 
     - name: Display error, if any
