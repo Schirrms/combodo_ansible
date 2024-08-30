@@ -40,21 +40,6 @@
 #
 ---
 
-### Are those tests still needed with the argument_specs in place?
-# no more test of "{{ itop_output_fields }}" as it is no more mandatory
-# - name: Check key variables are defined and not empty
-#   ansible.builtin.fail:
-#     msg: "One variable is empty"
-#   when:
-#     - not __itop_core_write_check
-#     - __itop_core_write_check is none
-#   loop:
-#     - "{{ itop_core_write_obj_class }}"
-#     - "{{ itop_core_write_key }}"
-#     - "{{ itop_core_write_fields }}"
-#   loop_control:
-#     loop_var: __itop_core_write_check
-
 - name: Build control list
   ansible.builtin.set_fact:
     __itop_core_write_fields_list: "{{ itop_core_write_fields.keys() | join(', ') }}"

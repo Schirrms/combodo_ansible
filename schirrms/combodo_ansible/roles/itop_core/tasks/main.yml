@@ -1,2 +1,3 @@
 ---
 # tasks file for schirrms/combodo_ansible/roles/itop_core
+# This file is intentionally empty, as this role as no default usage

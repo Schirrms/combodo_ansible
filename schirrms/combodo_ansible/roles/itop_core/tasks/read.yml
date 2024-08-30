@@ -34,20 +34,6 @@
 #
 ---
 
-### Are those tests still needed with the argument_specs in place?
-# - name: Check key variables are defined and not empty
-#   ansible.builtin.fail:
-#     msg: "One variable is empty"
-#   when:
-#     - not __itop_core_read_check
-#     - __itop_core_read_check is none
-#   loop:
-#     - "{{ itop_core_read_obj_class }}"
-#     - "{{ itop_core_read_key }}"
-#     - "{{ itop_core_read_fields }}"
-#   loop_control:
-#     loop_var: __itop_core_read_check
-
 - name: Build control list
   ansible.builtin.set_fact:
     __itop_core_read_fields_list: "{{ itop_core_read_fields.keys() | join(', ') }}"
