@@ -10,8 +10,11 @@
 # Common role input parameters:
 #  mandatory:
 #  - itop_core_root                 = Root URL of the iTop application
+#  either:
 #  - itop_core_ws_auth_user         = User login
 #  - itop_core_ws_auth_pwd          = User password
+#  or:
+#  - itop_core_ws_auth_token        = User token (token takes precedence over user/password)
 #  optional:
 #  - itop_core_ws_version           = Web Service version (default 1.3)
 #  - itop_core_ws_ansible_uuid      = UUID in iTop of the Ansible application to work with (default ANS_APP1)
@@ -44,27 +47,48 @@
   ansible.builtin.set_fact:
     __itop_core_write_fields_list: "{{ itop_core_write_fields.keys() | join(', ') }}"
 
+- name: Set authentication method
+  ansible.builtin.set_fact:
+    __auth_method: "{{ 'token' if itop_core_ws_auth_token is defined and itop_core_ws_auth_token | length >= 60 else 'basic' }}"
+
+
 - name: Check if CI exists
   block:
-    - name: Call operation core/get
+    - name: Call operation core/get (Basic Auth)
       ansible.builtin.uri:
         url: "{{ __itop_core_api_url }}"
         method: POST
         force_basic_auth: true
         url_username: "{{ itop_core_ws_auth_user }}"
         url_password: "{{ itop_core_ws_auth_pwd }}"
-        body: json_data= {
-          "operation":"core/get",
-          "class":"{{ itop_core_write_obj_class }}",
-          "key":{{ itop_core_write_key | to_json }},
-          "output_fields":"{{ __itop_core_write_fields_list }}"
-          }
+        body: "json_data= { \
+          \"operation\":\"core/get\", \
+          \"class\":\"{{ itop_core_write_obj_class }}\", \
+          \"key\":{{ itop_core_write_key | to_json }}, \
+          \"output_fields\":\"{{ __itop_core_write_fields_list }}\" \
+          }"
         return_content: true
-      register: __itop_core_write_response
+      register: __itop_core_write_response_basic
+      when: __auth_method == 'basic'
+
+    - name: Call operation core/get (Token Auth)
+      ansible.builtin.uri:
+        url: "{{ __itop_core_api_url }}"
+        method: POST
+        body: "auth_token={{ itop_core_ws_auth_token }}&json_data= { \
+          \"operation\":\"core/get\", \
+          \"class\":\"{{ itop_core_write_obj_class }}\", \
+          \"key\":{{ itop_core_write_key | to_json }}, \
+          \"output_fields\":\"{{ __itop_core_write_fields_list }}\" \
+          }"
+        return_content: true
+      register: __itop_core_write_response_token
+      when: __auth_method == 'token'
 
     - name: Save the Json data
       ansible.builtin.set_fact:
-        __itop_core_write_jsondata: "{{ __itop_core_write_response.content | from_json }}"
+        __itop_core_write_jsondata: "{{ __itop_core_write_response_basic.content | from_json if __auth_method == 'basic' \
+                                      else __itop_core_write_response_token.content | from_json }}"
 
     - name: Get error code and message
       ansible.builtin.set_fact:
@@ -91,26 +115,47 @@
 - name: Create CI
   when: itop_core_write_obj_key == "0" or itop_core_write_obj_key == ""
   block:
-    - name: Call operation core/create
+    - name: Call operation core/create (Basic Auth)
       ansible.builtin.uri:
         url: "{{ __itop_core_api_url }}"
         method: POST
         force_basic_auth: true
         url_username: "{{ itop_core_ws_auth_user }}"
         url_password: "{{ itop_core_ws_auth_pwd }}"
-        body: json_data= {
-          "operation":"core/create",
-          "comment":"{{ itop_core_write_create_comment }}",
-          "class":"{{ itop_core_write_obj_class }}",
-          "fields":{{ itop_core_write_fields | to_json }},
-          "output_fields":"{{ __itop_core_write_fields_list }}"
-          }
+        body: "json_data= { \
+          \"operation\":\"core/create\", \
+          \"comment\":\"{{ itop_core_write_create_comment }}\", \
+          \"class\":\"{{ itop_core_write_obj_class }}\", \
+          \"fields\":{{ itop_core_write_fields | to_json }}, \
+          \"output_fields\":\"{{ __itop_core_write_fields_list }}\" \
+          }"
         return_content: true
-      register: __itop_core_write_response
+      register: __itop_core_write_response_basic
+      when:
+        - itop_core_write_obj_key == "0" or itop_core_write_obj_key == ""
+        - __auth_method == 'basic'
+
+    - name: Call operation core/create (Token Auth)
+      ansible.builtin.uri:
+        url: "{{ __itop_core_api_url }}"
+        method: POST
+        body: "auth_token={{ itop_core_ws_auth_token }}&json_data= { \
+          \"operation\":\"core/create\", \
+          \"comment\":\"{{ itop_core_write_create_comment }}\", \
+          \"class\":\"{{ itop_core_write_obj_class }}\", \
+          \"fields\":{{ itop_core_write_fields | to_json }}, \
+          \"output_fields\":\"{{ __itop_core_write_fields_list }}\" \
+          }"
+        return_content: true
+      register: __itop_core_write_response_token
+      when:
+        - itop_core_write_obj_key == "0" or itop_core_write_obj_key == ""
+        - __auth_method == 'token'
 
     - name: Save the Json data
       ansible.builtin.set_fact:
-        __itop_core_write_jsondata: "{{ __itop_core_write_response.content | from_json }}"
+        __itop_core_write_jsondata: "{{ __itop_core_write_response_basic.content | from_json if __auth_method == 'basic' \
+                                      else __itop_core_write_response_token.content | from_json }}"
 
     - name: Get error code and message # noqa: jinja[invalid]
       ansible.builtin.set_fact:
@@ -130,27 +175,45 @@
 - name: Update CI
   when: itop_core_write_obj_key != "0" and itop_core_write_obj_key != ""
   block:
-    - name: Call operation core/update
+    - name: Call operation core/update (Basic Auth)
       ansible.builtin.uri:
         url: "{{ __itop_core_api_url }}"
         method: POST
         force_basic_auth: true
         url_username: "{{ itop_core_ws_auth_user }}"
         url_password: "{{ itop_core_ws_auth_pwd }}"
-        body: json_data= {
-          "operation":"core/update",
-          "comment":"{{ itop_core_write_update_comment }}",
-          "class":"{{ itop_core_write_obj_class }}",
-          "key":{{ itop_core_write_key | to_json }},
-          "fields":{{ itop_core_write_fields | to_json }},
-          "output_fields":"{{ __itop_core_write_fields_list }}"
-          }
+        body: "json_data= { \
+          \"operation\":\"core/update\", \
+          \"comment\":\"{{ itop_core_write_update_comment }}\", \
+          \"class\":\"{{ itop_core_write_obj_class }}\", \
+          \"key\":{{ itop_core_write_key | to_json }}, \
+          \"fields\":{{ itop_core_write_fields | to_json }}, \
+          \"output_fields\":\"{{ __itop_core_write_fields_list }}\" \
+          }"
         return_content: true
-      register: __itop_core_write_response
+      register: __itop_core_write_response_basic
+      when: __auth_method == 'basic'
+
+    - name: Call operation core/update (Token Auth)
+      ansible.builtin.uri:
+        url: "{{ __itop_core_api_url }}"
+        method: POST
+        body: "auth_token={{ itop_core_ws_auth_token }}&json_data= { \
+          \"operation\":\"core/update\", \
+          \"comment\":\"{{ itop_core_write_update_comment }}\", \
+          \"class\":\"{{ itop_core_write_obj_class }}\", \
+          \"key\":{{ itop_core_write_key | to_json }}, \
+          \"fields\":{{ itop_core_write_fields | to_json }}, \
+          \"output_fields\":\"{{ __itop_core_write_fields_list }}\" \
+          }"
+        return_content: true
+      register: __itop_core_write_response_token
+      when: __auth_method == 'token'
 
     - name: Save the Json data
       ansible.builtin.set_fact:
-        __itop_core_write_jsondata: "{{ __itop_core_write_response.content | from_json }}"
+        __itop_core_write_jsondata: "{{ __itop_core_write_response_basic.content | from_json if __auth_method == 'basic' \
+                                      else __itop_core_write_response_token.content | from_json }}"
 
     - name: Get error code and message
       ansible.builtin.set_fact:
@@ -209,25 +272,41 @@
         - itop_core_write_output_fields is defined
         - itop_core_write_output_fields|count > 0
 
-    - name: Get actual values
+    - name: Get actual values (Basic Auth)
       ansible.builtin.uri:
         url: "{{ __itop_core_api_url }}"
         method: POST
         force_basic_auth: true
         url_username: "{{ itop_core_ws_auth_user }}"
         url_password: "{{ itop_core_ws_auth_pwd }}"
-        body: json_data= {
-          "operation":"core/get",
-          "class":"{{ itop_core_write_obj_class }}",
-          "key":{{ itop_core_write_key | to_json }},
-          "output_fields":"{{ __itop_core_write_out_fields }}"
-          }
+        body: "json_data= { \
+          \"operation\":\"core/get\", \
+          \"class\":\"{{ itop_core_write_obj_class }}\", \
+          \"key\":{{ itop_core_write_key | to_json }}, \
+          \"output_fields\":\"{{ __itop_core_write_out_fields }}\" \
+          }"
         return_content: true
-      register: __itop_core_write_response
+      register: __itop_core_write_response_basic
+      when: __auth_method == 'basic'
+
+    - name: Get actual values (Token Auth)
+      ansible.builtin.uri:
+        url: "{{ __itop_core_api_url }}"
+        method: POST
+        body: "auth_token={{ itop_core_ws_auth_token }}&json_data= { \
+          \"operation\":\"core/get\", \
+          \"class\":\"{{ itop_core_write_obj_class }}\", \
+          \"key\":{{ itop_core_write_key | to_json }}, \
+          \"output_fields\":\"{{ __itop_core_write_out_fields }}\" \
+          }"
+        return_content: true
+      register: __itop_core_write_response_token
+      when: __auth_method == 'token'
 
     - name: Save the Json data
       ansible.builtin.set_fact:
-        __itop_core_write_jsondata: "{{ __itop_core_write_response.content | from_json }}"
+        __itop_core_write_jsondata: "{{ __itop_core_write_response_basic.content | from_json if __auth_method == 'basic' \
+                                      else __itop_core_write_response_token.content | from_json }}"
 
     - name: Get error code and message
       ansible.builtin.set_fact:

@@ -12,8 +12,11 @@
 # Common role input parameters:
 #  mandatory:
 #  - itop_core_root                 = Root URL of the iTop application
+#  either:
 #  - itop_core_ws_auth_user         = User login
 #  - itop_core_ws_auth_pwd          = User password
+#  or:
+#  - itop_core_ws_auth_token        = User token (token takes precedence over user/password)
 #  optional:
 #  - itop_core_ws_version           = Web Service version (default 1.3)
 #  - itop_core_ws_ansible_uuid      = UUID in iTop of the Ansible application to work with (default ANS_APP1)
@@ -54,26 +57,47 @@
 - name: Delete the CI
   when: ( itop_core_ispresent_found_items | int ) == 1
   block:
-    - name: Call iTop API for actual deletion
+    - name: Set authentication method
+      ansible.builtin.set_fact:
+        __auth_method: "{{ 'token' if itop_core_ws_auth_token is defined and itop_core_ws_auth_token | length >= 60 else 'basic' }}"
+
+    - name: Call iTop API for actual deletion (Basic Auth)
       ansible.builtin.uri:
         url: "{{ __itop_core_api_url }}"
         method: POST
         force_basic_auth: true
         url_username: "{{ itop_core_ws_auth_user }}"
         url_password: "{{ itop_core_ws_auth_pwd }}"
-        body: json_data= {
-          "operation":"core/delete",
-          "comment":"{{ itop_core_delete_comment }}",
-          "class":"{{ itop_core_delete_obj_class }}",
-          "key":{{ itop_core_delete_key | to_json }},
-          "simulate":{{ itop_core_delete_simulate }}
-          }
+        body: "json_data= { \
+          \"operation\":\"core/delete\", \
+          \"comment\":\"{{ itop_core_delete_comment }}\", \
+          \"class\":\"{{ itop_core_delete_obj_class }}\", \
+          \"key\":{{ itop_core_delete_key | to_json }}, \
+          \"simulate\":{{ itop_core_delete_simulate }} \
+          }"
         return_content: true
-      register: __itop_core_delete_response
+      register: __itop_core_delete_response_basic
+      when: __auth_method == 'basic'
+
+    - name: Call iTop API for actual deletion (Token Auth)
+      ansible.builtin.uri:
+        url: "{{ __itop_core_api_url }}"
+        method: POST
+        body: "auth_token={{ itop_core_ws_auth_token }}&json_data= { \
+          \"operation\":\"core/delete\", \
+          \"comment\":\"{{ itop_core_delete_comment }}\", \
+          \"class\":\"{{ itop_core_delete_obj_class }}\", \
+          \"key\":{{ itop_core_delete_key | to_json }}, \
+          \"simulate\":{{ itop_core_delete_simulate }} \
+          }"
+        return_content: true
+      register: __itop_core_delete_response_token
+      when: __auth_method == 'token'
 
     - name: Save the Json data
       ansible.builtin.set_fact:
-        __itop_core_delete_jsondata: "{{ __itop_core_delete_response.content | from_json }}"
+        __itop_core_delete_jsondata: "{{ __itop_core_delete_response_basic.content | from_json if __auth_method == 'basic' \
+                                       else __itop_core_delete_response_token.content | from_json }}"
 
     - name: Get error code and message
       ansible.builtin.set_fact:
