@@ -58,17 +58,22 @@ So this var can contains the three syntax type for the reconciliation.
 
 ### Common information
 
-The next 6 variables are common to every tasks in the role, as those vars define
-the access to the itop Server
+The next 7 variables are common to every tasks in the role, as those vars define
+the access to the itop Server.
 
 | Input/Output | Variable Name                   | Required | Type | Default  | Description |
 |--------------|---------------------------------|----------|------|----------|-------------|
-| Input shared | itop_core_ws_auth_user          | True     | str  |          | iTop Rest Username |
-| Input shared | itop_core_ws_auth_pwd           | True     | str  |          | iTop Rest Password |
+| Input shared | itop_core_ws_auth_user          | True *   | str  |          | iTop Rest Username |
+| Input shared | itop_core_ws_auth_pwd           | True *   | str  |          | iTop Rest Password |
+| Input shared | itop_core_ws_auth_token         | True *   | str  |          | iTop Rest Token |
 | Input shared | itop_core_root                  | True     | str  |          | iTop server URL |
 | Input shared | itop_core_ws_version            | False    | str  | 1.3      | Web Service version |
 | Input shared | itop_core_ws_ansible_uuid       | False    | str  | ANS_APP1 | UUID in iTop of the Ansible application to work with |
 | Input shared | itop_core_ws_ansible_inventory  | False    | str  | ANS_ITOP | Name of the Inventory to consider |
+
+\* *You'll need either the couple itop_core_ws_auth_user / itop_core_ws_auth_pwd,
+   or the itop_core_ws_auth_token. Should you give the 3 values,
+ then the token will be used.*
 
 ### read
 

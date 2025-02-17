@@ -43,6 +43,15 @@
 #
 ---
 
+- name: Check authentication variables
+  ansible.builtin.fail:
+    msg: "Either both itop_core_ws_auth_user and itop_core_ws_auth_pwd must be set and non-empty, \
+          or itop_core_ws_auth_token must be set and contain at least 60 characters."
+  when: not
+    ((itop_core_ws_auth_user is defined and itop_core_ws_auth_user | length > 0 and
+      itop_core_ws_auth_pwd is defined and itop_core_ws_auth_pwd | length > 0) or
+     (itop_core_ws_auth_token is defined and itop_core_ws_auth_token | length >= 60))
+
 - name: Build control list
   ansible.builtin.set_fact:
     __itop_core_write_fields_list: "{{ itop_core_write_fields.keys() | join(', ') }}"
