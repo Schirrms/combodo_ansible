@@ -77,12 +77,17 @@ argument_specs:
       # Begin of common part, to be reproduced in each task
       itop_core_ws_auth_user:
         type: "str"
-        required: true
+        required: false
         description: iTop Rest Username
 
       itop_core_ws_auth_pwd:
         type: "str"
-        required: true
+        required: false
+        description: iTop Rest Password
+
+      itop_core_ws_auth_token:
+        type: "str"
+        required: false
         description: iTop Rest Password
 
       itop_core_root:
@@ -158,12 +163,17 @@ argument_specs:
       # Begin of common part, to be reproduced in each task
       itop_core_ws_auth_user:
         type: "str"
-        required: true
+        required: false
         description: iTop Rest Username
 
       itop_core_ws_auth_pwd:
         type: "str"
-        required: true
+        required: false
+        description: iTop Rest Password
+
+      itop_core_ws_auth_token:
+        type: "str"
+        required: false
         description: iTop Rest Password
 
       itop_core_root:
@@ -215,12 +225,17 @@ argument_specs:
       # Begin of common part, to be reproduced in each task
       itop_core_ws_auth_user:
         type: "str"
-        required: true
+        required: false
         description: iTop Rest Username
 
       itop_core_ws_auth_pwd:
         type: "str"
-        required: true
+        required: false
+        description: iTop Rest Password
+
+      itop_core_ws_auth_token:
+        type: "str"
+        required: false
         description: iTop Rest Password
 
       itop_core_root:
